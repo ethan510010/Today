@@ -10,7 +10,7 @@ import UIKit
 
 class TableViewController: UITableViewController {
     
-    let itemArray = ["1","2","3"]
+    var itemArray = ["1","2","3"]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -107,5 +107,31 @@ class TableViewController: UITableViewController {
      // Pass the selected object to the new view controller.
      }
      */
+    
+    //Add new items
+    @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
+        
+        var textField = UITextField()
+        
+        let alert = UIAlertController(title: "Add New Todoey Item", message: "", preferredStyle: .alert)
+      
+        //在警告控制器加上textFeild，並且把此警告控制器存到var textFeild，在上面會另外實體化一個textField目的是為了讓下面的action也可以用
+        alert.addTextField { (alertTextField) in
+            alertTextField.placeholder = "Create new item"
+            textField = alertTextField
+        }
+        
+       let action =  UIAlertAction(title: "Add Item", style: .default) { (action) in
+            //what will happen once user click the add item button on UIAlert
+            self.itemArray.append(textField.text!)
+            self.tableView.reloadData()
+        
+        }
+
+        alert.addAction(action)
+        
+        
+        present(alert, animated: true, completion: nil)
+    }
     
 }
