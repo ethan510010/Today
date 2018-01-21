@@ -12,8 +12,14 @@ class TableViewController: UITableViewController {
     
     var itemArray = ["1","2","3"]
     
+    let defaults = UserDefaults.standard
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        if let items  = defaults.array(forKey: "TodoListArray") as? [String]{
+            itemArray = items
+        }
         
         // Uncomment the following line to preserve selection between presentations
         // self.clearsSelectionOnViewWillAppear = false
@@ -124,6 +130,10 @@ class TableViewController: UITableViewController {
        let action =  UIAlertAction(title: "Add Item", style: .default) { (action) in
             //what will happen once user click the add item button on UIAlert
             self.itemArray.append(textField.text!)
+        
+            // 存資料
+            self.defaults.set(self.itemArray, forKey: "TodoListArray")
+        
             self.tableView.reloadData()
         
         }
