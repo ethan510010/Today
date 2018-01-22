@@ -7,47 +7,53 @@
 //
 
 import UIKit
+import CoreData
 
 class TableViewController: UITableViewController {
     
     var itemArray = [Item]()
     
-    //找到儲存用戶個人資料的路徑
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    var selectedCategory: Category?{
+        didSet{
+            loadItems()
+        }
+    }
     
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    //找到儲存用戶個人資料的路徑
+    //    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    
+    @IBOutlet weak var searchBar: UISearchBar!
     
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        print(dataFilePath!)
-       
-//        let newItem = Item()
-//        newItem.title = "Find Mike"
-//        itemArray.append(newItem)
-//
-//        let newItem2 = Item()
-//        newItem2.title = "buy milk"
-//        itemArray.append(newItem2)
-//
-//        let newItem3 = Item()
-//        newItem3.title = "go to mall"
-//        itemArray.append(newItem3)
-//
+        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
+        
+        //        let newItem = Item()
+        //        newItem.title = "Find Mike"
+        //        itemArray.append(newItem)
+        //
+        //        let newItem2 = Item()
+        //        newItem2.title = "buy milk"
+        //        itemArray.append(newItem2)
+        //
+        //        let newItem3 = Item()
+        //        newItem3.title = "go to mall"
+        //        itemArray.append(newItem3)
+        //
+        searchBar.delegate = self
         
         //  取資料
         loadItems()
         
-//        if let items = defaults.array(forKey: "TodoListarray") as? [Item]{
-//            itemArray = items
-//        }
- 
-        // Uncomment the following line to preserve selection between presentations
-        // self.clearsSelectionOnViewWillAppear = false
+        //        if let items = defaults.array(forKey: "TodoListarray") as? [Item]{
+        //            itemArray = items
+        //        }
         
-        // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-        // self.navigationItem.rightBarButtonItem = self.editButtonItem
+        
     }
     
     
@@ -77,12 +83,12 @@ class TableViewController: UITableViewController {
         
         
         
-//        if item.done == true{
-//            cell.accessoryType = .checkmark
-//        }else{
-//            cell.accessoryType = .none
-//        }
-       //上面的判斷是簡化成下面一行
+        //        if item.done == true{
+        //            cell.accessoryType = .checkmark
+        //        }else{
+        //            cell.accessoryType = .none
+        //        }
+        //上面的判斷是簡化成下面一行
         cell.accessoryType = item.done == true ? .checkmark : .none
         
         return cell
@@ -92,8 +98,17 @@ class TableViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
+        //        itemArray[indexPath.row].setValue("Completed", forKey: "title")
         
+        //deleta Data from coreDate
+        let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+        
+        //        context.delete(itemArray[indexPath.row])
+        //
+        //        itemArray.remove(at: indexPath.row)
         //如果被點到的row有圖案載點按一次就取消，否則加上checkmark
+        
+        
         
         if itemArray[indexPath.row].done == false{
             itemArray[indexPath.row].done = true
@@ -105,14 +120,14 @@ class TableViewController: UITableViewController {
         
         
         
-//        if  tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark{
-//            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-//        }else{
-//            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-//        }
+        //        if  tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark{
+        //            tableView.cellForRow(at: indexPath)?.accessoryType = .none
+        //        }else{
+        //            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
+        //        }
         //消除點到會一直維持灰色，讓他點一下後就消除點選
         tableView.deselectRow(at: indexPath, animated: true)
-       
+        
         
     }
     /*
@@ -166,28 +181,36 @@ class TableViewController: UITableViewController {
         var textField = UITextField()
         
         let alert = UIAlertController(title: "Add New Todoey Item", message: "", preferredStyle: .alert)
-      
+        
         //在警告控制器加上textFeild，並且把此警告控制器存到var textFeild，在上面會另外實體化一個textField目的是為了讓下面的action也可以用
         alert.addTextField { (alertTextField) in
             alertTextField.placeholder = "Create new item"
             textField = alertTextField
         }
         
-       let action =  UIAlertAction(title: "Add Item", style: .default) { (action) in
+        let action =  UIAlertAction(title: "Add Item", style: .default) { (action) in
             //what will happen once user click the add item button on UIAlert
-        
-            let newItem = Item()
+            
+            let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+            
+            let newItem = Item(context: context)
+            
             newItem.title = textField.text!
-        
+            newItem.done = false
+            
+            
+            //因為有建立CoreData關係
+            newItem.parentCategory = self.selectedCategory
+            
             self.itemArray.append(newItem)
-        
+            
             // 存資料
-//            self.defaults.set(self.itemArray, forKey: "TodoListArray")
-        
+            //            self.defaults.set(self.itemArray, forKey: "TodoListArray")
+            
             self.saveItems()
-        
+            
         }
-
+        
         alert.addAction(action)
         
         
@@ -195,14 +218,13 @@ class TableViewController: UITableViewController {
     }
     
     
-    //用Encoder存資料成plist檔
+    //用CoreData存資料
     func saveItems(){
-        let encoder = PropertyListEncoder()
+        
+        let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
         
         do{
-            let data = try encoder.encode(self.itemArray)
-            //把data寫到我們路徑下
-            try data.write(to: self.dataFilePath!)
+            try context.save()
         }catch{
             print(error.localizedDescription)
         }
@@ -211,16 +233,64 @@ class TableViewController: UITableViewController {
         self.tableView.reloadData()
     }
     
-    //用Decoder取資料
-    func loadItems(){
-        if let data = try? Data(contentsOf: self.dataFilePath!){
-            let decoder = PropertyListDecoder()
-            do {
-                itemArray = try decoder.decode([Item].self, from: data)
-            }catch{
-                print(error.localizedDescription)
+    //用CoreData取資料
+    func loadItems(predicate:NSPredicate? = nil){
+        let request:NSFetchRequest<Item /*填入Entity名稱*/> = Item.fetchRequest()
+        
+        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", (selectedCategory?.name)!)
+        
+//        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate,predicate])
+//
+//        request.predicate = compoundPredicate
+        
+        if let additionalPredicate = predicate{
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate,additionalPredicate])
+        }else{
+            request.predicate = categoryPredicate
+        }
+        
+        do {
+            itemArray = try context.fetch(request)
+        } catch  {
+            print(error.localizedDescription)
+        }
+        
+        tableView.reloadData()
+    }
+    
+    
+    
+    
+}
+
+extension  TableViewController: UISearchBarDelegate{
+    
+    //實現searbarDelegate的方法
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        let request: NSFetchRequest<Item> = Item.fetchRequest()
+        
+        let predicate = NSPredicate(format: "title CONTAINS[cd] %@" /*填入要搜尋的屬性*/, searchBar.text!)
+        
+        request.predicate = predicate
+        
+        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+        
+        loadItems(predicate: predicate)
+    }
+    
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        
+        if searchBar.text?.count == 0 {
+            print("test")
+            loadItems()
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+                self.tableView.reloadData()
             }
-           
+            
+            
+            
         }
     }
 }
