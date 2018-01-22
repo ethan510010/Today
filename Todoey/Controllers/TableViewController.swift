@@ -10,17 +10,39 @@ import UIKit
 
 class TableViewController: UITableViewController {
     
-    var itemArray = ["1","2","3"]
+    var itemArray = [Item]()
     
-    let defaults = UserDefaults.standard
+    //找到儲存用戶個人資料的路徑
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    
+    
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if let items  = defaults.array(forKey: "TodoListArray") as? [String]{
-            itemArray = items
-        }
+        print(dataFilePath!)
+       
+//        let newItem = Item()
+//        newItem.title = "Find Mike"
+//        itemArray.append(newItem)
+//
+//        let newItem2 = Item()
+//        newItem2.title = "buy milk"
+//        itemArray.append(newItem2)
+//
+//        let newItem3 = Item()
+//        newItem3.title = "go to mall"
+//        itemArray.append(newItem3)
+//
         
+        //  取資料
+        loadItems()
+        
+//        if let items = defaults.array(forKey: "TodoListarray") as? [Item]{
+//            itemArray = items
+//        }
+ 
         // Uncomment the following line to preserve selection between presentations
         // self.clearsSelectionOnViewWillAppear = false
         
@@ -46,9 +68,22 @@ class TableViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
         
-        cell.textLabel?.text = itemArray[indexPath.row]
+        let item = itemArray[indexPath.row]
         
-       
+        cell.textLabel?.text = item.title
+        
+        
+        //三元運算子 vale = condition ? valueIfTrue:valueIfFalse
+        
+        
+        
+//        if item.done == true{
+//            cell.accessoryType = .checkmark
+//        }else{
+//            cell.accessoryType = .none
+//        }
+       //上面的判斷是簡化成下面一行
+        cell.accessoryType = item.done == true ? .checkmark : .none
         
         return cell
     }
@@ -59,14 +94,25 @@ class TableViewController: UITableViewController {
         
         
         //如果被點到的row有圖案載點按一次就取消，否則加上checkmark
-        if  tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark{
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
+        
+        if itemArray[indexPath.row].done == false{
+            itemArray[indexPath.row].done = true
         }else{
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
+            itemArray[indexPath.row].done = false
         }
         
+        saveItems()
+        
+        
+        
+//        if  tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark{
+//            tableView.cellForRow(at: indexPath)?.accessoryType = .none
+//        }else{
+//            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
+//        }
         //消除點到會一直維持灰色，讓他點一下後就消除點選
         tableView.deselectRow(at: indexPath, animated: true)
+       
         
     }
     /*
@@ -129,12 +175,16 @@ class TableViewController: UITableViewController {
         
        let action =  UIAlertAction(title: "Add Item", style: .default) { (action) in
             //what will happen once user click the add item button on UIAlert
-            self.itemArray.append(textField.text!)
+        
+            let newItem = Item()
+            newItem.title = textField.text!
+        
+            self.itemArray.append(newItem)
         
             // 存資料
-            self.defaults.set(self.itemArray, forKey: "TodoListArray")
+//            self.defaults.set(self.itemArray, forKey: "TodoListArray")
         
-            self.tableView.reloadData()
+            self.saveItems()
         
         }
 
@@ -144,4 +194,33 @@ class TableViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
     }
     
+    
+    //用Encoder存資料成plist檔
+    func saveItems(){
+        let encoder = PropertyListEncoder()
+        
+        do{
+            let data = try encoder.encode(self.itemArray)
+            //把data寫到我們路徑下
+            try data.write(to: self.dataFilePath!)
+        }catch{
+            print(error.localizedDescription)
+        }
+        
+        
+        self.tableView.reloadData()
+    }
+    
+    //用Decoder取資料
+    func loadItems(){
+        if let data = try? Data(contentsOf: self.dataFilePath!){
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([Item].self, from: data)
+            }catch{
+                print(error.localizedDescription)
+            }
+           
+        }
+    }
 }
